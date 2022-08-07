@@ -114,9 +114,9 @@ class Curl{
             $setopts[CURLOPT_FOLLOWLOCATION] = true;// 使用自动跳转
             $setopts[CURLOPT_AUTOREFERER] = true;//自动设置Referer
             $setopts[CURLOPT_TIMEOUT] = 5; // 设置超时限制防止死循环
-            if(isset($_SERVER['HTTP_USER_AGENT']) && !isset($this->common[CURLOPT_USERAGENT])){
-                $setopts[CURLOPT_USERAGENT] = $_SERVER['HTTP_USER_AGENT'];
-            }
+//            if(isset($_SERVER['HTTP_USER_AGENT']) && !isset($this->common[CURLOPT_USERAGENT])){
+//                $setopts[CURLOPT_USERAGENT] = $_SERVER['HTTP_USER_AGENT'];
+//            }
         }
 
         if(!$append){
@@ -181,7 +181,7 @@ class Curl{
      */
     private function setUrlSetopt($url, $method, $data){
         $url = trim($url, '?');
-        if($method == Curl::METHOD_GET){
+        if($method == Curl::METHOD_GET && !empty($data)){
             $data = $data ? (is_array($data) ? http_build_query($data) : $data ) : '';
             $url = $url . '?' . $data;
         }

@@ -15,16 +15,16 @@ class FileCache{
     public static function getInstall($file_logs_path = FeleCacheLogPath){
         if(self::$_install == null){
             self::$_install = new static();
-            self::$_install->setFileLogsPath($file_logs_path);
         }
 
+        self::$_install->setFileLogsPath($file_logs_path);
         return self::$_install;
     }
 
     private function __construct(){}
 
     public function setFileLogsPath($path){
-        $this->file_logs = $path;
+        $this->file_logs = $path . DIRECTORY_SEPARATOR;
         if(!is_dir($this->file_logs)){
             mkdir($this->file_logs, 0775, true);
         }

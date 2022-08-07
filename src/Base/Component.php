@@ -32,7 +32,7 @@ class Component{
             $event->sender = $this;
 
             foreach ($eventHandlers as $handler) {
-                $event->data = $handler[1];
+                $event->onData = $handler[1];
                 call_user_func($handler[0], $event);
                 if ($event->handled) {
                     return;
@@ -57,9 +57,9 @@ class Component{
      * @param $behavior
      * @return $this
      */
-    public function setBehavior($name, $behavior){
+    public function addBehavior($name, $behavior){
         $this->ensureBehaviors();
-        $this->attachBehaviorInternal($name, $behavior);
+        $this->attachBehaviorInternal($name, $behavior, true);
         return $this;
     }
     /**
@@ -90,15 +90,20 @@ class Component{
      * @throws ErrorBase
      */
     private function attachBehaviorInternal($name, $behavior){
-        if (!is_object($behavior)) {
-            try{
+        if(empty($behavior)){
+            return null;
+        }
+
+        try{
+            if (!is_object($behavior)) {
                 $behavior = new $behavior;
-                if($behavior instanceof Behavior){
-                    $behavior->attach($this);
-                }
-            }catch(\Exception $exception){
-                throw new ErrorBase($exception->getMessage(), 1, $exception);
             }
+
+            if($behavior instanceof Behavior){
+                $behavior->attach($this);
+            }
+        }catch(\Exception $exception){
+            throw new ErrorBase($exception->getMessage(), 1, $exception);
         }
 
         if (is_int($name)) {

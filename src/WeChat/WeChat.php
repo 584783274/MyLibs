@@ -1,14 +1,15 @@
 <?php
 namespace Kang\Libs\WeChat;
 
+use Kang\Libs\Base\Behavior;
 use Kang\Libs\Base\Component;
 use Kang\Libs\Base\Event;
 use Kang\Libs\Helper\Curl;
-use Kang\Libs\Helper\FileCache;
 use Kang\Libs\WeChat\Behavior\WeChatBehavior;
 
 /**
  * Class WeChatBase
+ * @property \Kang\Libs\Base\Behavior $wechatBehavior 监听当前类触发的事件
  * @property string $appid  微信 appid
  * @property string $appsecret  微信 appsecret
  * @property string $token  微信消息的token
@@ -90,8 +91,7 @@ class WeChat extends Component {
 
     public function behaviors(): array{
         return [
-            WeChatBehavior::class,
-            'cache' =>  FileCache::getInstall(),
+            $this->wechatBehavior,
         ];
     }
     //--------------------------微信服务器通知--------------------------------//
@@ -2109,8 +2109,7 @@ class WeChat extends Component {
     //---------------------------------------配置信息-----------------------------------//
     /**
      * @var 获取AccessToken
-     * @param \Closure|null $callable
-     * @return bool
+     * @return mixed
      */
     public function getAccessToken(){
         if(empty($this->_config['accessToken'])){
@@ -2133,15 +2132,14 @@ class WeChat extends Component {
     }
     /**
      * @var 刷新AccessToken
-     * @param \Closure|null $callable
-     * @return bool
+     * @return bool|mixed
      */
     public function refreshAccessToken(){
         $event = new Event();
         $event->sender = $this;
         $this->trigger(self::EVENT_BEFORE_REFRESH_ACCESS_TOKEN, $event);
         if($event->handled === true){
-            return $event->data['access_token'] ?? '';
+            return $event->data['access_token'] ?? $event->data;
         }
 
         $url    = self::API_TOKEN_URL;
@@ -2153,10 +2151,21 @@ class WeChat extends Component {
             return false;
         }
 
-        $this->trigger(self::EVENT_AFTER_REFRESH_ACCESS_TOKEN, $result['access_token']);
+        $event->data = $result;
+        $this->trigger(self::EVENT_AFTER_REFRESH_ACCESS_TOKEN, $event);
         return $result['access_token'];
     }
     //--------------------------自定义菜单--------------------------------//
+
+    public function setWechatBehavior(Behavior $behavior){
+        $this->_config['behavior'] = $behavior;
+        return $this;
+    }
+
+    public function getWechatBehavior(){
+        return $this->_config['behavior'] ?? WeChatBehavior::class;
+    }
+
     /**
      * @var 设置微信 appid
      * @param string $appid
@@ -2357,7 +2366,7 @@ class WeChat extends Component {
         }
 
         if(!$result = $this->responseResult($result)){
-            if($this->getErrorCode() == 42001 || $this->getErrorCode() == 40001){
+            if($this->getErrorCode() == 42001){
                 $this->setAccessToken('');
                 $this->trigger(self::EVENT_ACCESS_TOKEN_ERROR, $event);
                 if($this->getAccessToken() && $autoToken){

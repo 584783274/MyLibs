@@ -1,22 +1,21 @@
 <?php
 
-namespace Kang\Libs\WeChat\Behavior;
+namespace Kang\Libs\Baidu\Behavior;
 
+use Kang\Libs\Baidu\Baidu;
 use Kang\Libs\Base\Behavior;
 use Kang\Libs\Base\Event;
 use Kang\Libs\Helper\FileCache;
-use Kang\Libs\WeChat\WeChat;
 
-class WeChatBehavior extends Behavior {
+class BaiduBehavior extends Behavior {
     public function events(){
         return [
-            WeChat::EVENT_ACCESS_TOKEN_ERROR => [$this, 'errorAccessToken'],
-            WeChat::EVENT_BEFORE_REFRESH_ACCESS_TOKEN => [$this, 'beforeRefreshAccessToken'],
-            WeChat::EVENT_AFTER_REFRESH_ACCESS_TOKEN => [$this, 'afterRefreshAccessToken'],
-            WeChat::EVENT_REFRESH_JS_API_TICKET => [$this, 'refreshJsapiTicket'],
-            WeChat::EVENT_REFRESH_COMPONENT_ACCESS_TOKEN => [$this, 'componentAccessToken'],
-            WeChat::EVENT_ACCESS_TOKEN_CACHE_GET => [$this, 'accessTokenGetCache'],
-            WeChat::EVENT_lOG => [$this, 'log'],
+            Baidu::EVENT_ACCESS_TOKEN_ERROR => [$this, 'errorAccessToken'],
+            Baidu::EVENT_BEFORE_REFRESH_ACCESS_TOKEN => [$this, 'beforeRefreshAccessToken'],
+            Baidu::EVENT_AFTER_REFRESH_ACCESS_TOKEN => [$this, 'afterRefreshAccessToken'],
+            Baidu::EVENT_REFRESH_JS_API_TICKET => [$this, 'refreshJsapiTicket'],
+            Baidu::EVENT_ACCESS_TOKEN_CACHE_GET => [$this, 'accessTokenGetCache'],
+            Baidu::EVENT_lOG => [$this, 'log'],
         ];
     }
     /**
@@ -25,7 +24,7 @@ class WeChatBehavior extends Behavior {
      */
     public function errorAccessToken(Event $event){
         $wechat = $event->sender;
-        FileCache::getInstall()->set($wechat->appid . $wechat->appsecret, null);
+        FileCache::getInstall()->set($this->getCacheKey($event->sender), null);
     }
     /**
      * @var 监听AccessToken更新之前事件
@@ -40,8 +39,8 @@ class WeChatBehavior extends Behavior {
      */
     public function afterRefreshAccessToken(Event $event){
         if(!empty($event->data['access_token'])){
-            $wechat = $event->sender;
-            $event->data = FileCache::getInstall($this->getLogsPath())->set($wechat->appid . $wechat->appsecret, $event->data['access_token'], 7150);
+            $event->data = FileCache::getInstall($this->getLogsPath())
+                ->set($this->getCacheKey($event->sender), $event->data['access_token'], 30 * 24 * 60 * 60);
         }
     }
     /**
@@ -67,11 +66,15 @@ class WeChatBehavior extends Behavior {
     }
 
     public function accessTokenGetCache(Event $event){
-        $wechat = $event->sender;
-        $event->data = FileCache::getInstall($this->getLogsPath())->get($wechat->appid . $wechat->appsecret);
+        $event->data = FileCache::getInstall($this->getLogsPath())
+            ->get($this->getCacheKey($event->sender));
     }
 
     private function getLogsPath(){
         return __DIR__ . DIRECTORY_SEPARATOR . 'logs' . DIRECTORY_SEPARATOR;
+    }
+
+    private function getCacheKey(Baidu $baidu){
+        return $baidu->appid . $baidu->appkey . $baidu->secret;
     }
 }
