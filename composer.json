@@ -1,0 +1,11 @@
+{
+    "name": "kang/kang",
+    "type": "library",
+    "autoload": {
+        "psr-4": {
+            "Kang\\Libs\\": "src/"
+        }
+    },
+    "minimum-stability": "dev",
+    "require": {}
+}
