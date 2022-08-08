@@ -20,6 +20,8 @@ use Kang\Libs\Helper\Curl;
  * @package MyLibs\Baidu
  */
 class Baidu extends Component {
+    const API_BASE_URL = 'https://aip.baidubce.com/'; //基础路由端口
+
     const EVENT_AFTER_REFRESH_ACCESS_TOKEN = 'afterRefreshAccessToken'; //监听普通公众号跟授权第三方时公众号的AccessToken刷新事件
     const EVENT_BEFORE_REFRESH_ACCESS_TOKEN = 'beforeRefreshAccessToken'; //监听普通公众号跟授权第三方时公众号的AccessToken刷新事件
     const EVENT_REFRESH_JS_API_TICKET = 'refreshJsapiTicket'; //监听刷新事件
@@ -48,7 +50,7 @@ class Baidu extends Component {
             $data['url'] = $imageUrl;
         }
 
-        return $this->post(self::API_OCR_ACCURATE_BASIC_URL, $data, true);
+        return $this->post('rest/2.0/ocr/v1/accurate_basic?access_token=', $data, true);
     }
     /**
      * @var 获取AccessToken
@@ -85,11 +87,11 @@ class Baidu extends Component {
             return $event->data['access_token'] ?? $event->data;
         }
 
-        $url = self::API_ACCESS_TOKEN_URL;
+        $url = 'oauth/2.0/token?';
         $data['grant_type'] = 'client_credentials';
         $data['client_id'] = $this->appkey;
         $data['client_secret'] = $this->secret;
-        $result = $this->get($url, $data);
+        $result = self::get($url, $data);
         if(!$result || !isset($result['access_token'])){
             return false;
         }
@@ -99,7 +101,7 @@ class Baidu extends Component {
         return $result['access_token'];
     }
 
-    public function post($url, $data, $autoToken = false){
+    public function post($url, $data = [], $autoToken = false){
        return $this->request($url, Curl::METHOD_POST, $autoToken, $data);
     }
 
@@ -108,9 +110,11 @@ class Baidu extends Component {
             $url .= http_build_query($data);
         }
 
-        return $this->request($url, Curl::METHOD_GET, $autoToken);
+        return $this->request($url, Curl::METHOD_GET, $autoToken, null, []);
     }
-    public function request($url, $method, $autoToken = false, $data = null){
+
+    public function request($url, $method, $autoToken = false, $data = null, $headers = ['Content-Type' => 'application/x-www-form-urlencoded']){
+        $url = self::API_BASE_URL . $url;
         $event = new Event();
         $event->data['url'] = $url;
         $event->data['method'] = $method;
@@ -118,8 +122,8 @@ class Baidu extends Component {
         $this->trigger(self::EVENT_lOG, $event);
 
         $curl = Curl::getInstall();
-        if(Curl::METHOD_POST == $method){
-            $curl->setHeader(['Content-Type' => 'application/x-www-form-urlencoded'], false);
+        if(!empty($headers)){
+            $curl->setHeader($headers, false);
         }
 
         if($autoToken){
@@ -175,8 +179,4 @@ class Baidu extends Component {
     public function getBaiduBehavior(){
         return $this->_config['behavior'] ?? BaiduBehavior::class;
     }
-
-    const API_BASE_URL = 'https://aip.baidubce.com/';
-    const API_ACCESS_TOKEN_URL = self::API_BASE_URL . 'oauth/2.0/token?';
-    const API_OCR_ACCURATE_BASIC_URL = self::API_BASE_URL . 'rest/2.0/ocr/v1/accurate_basic?access_token=';
 }

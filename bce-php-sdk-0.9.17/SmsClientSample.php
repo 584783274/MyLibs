@@ -38,4 +38,6 @@ $contentVar = array(
  *}
  */
 $response = $client->sendMessage($mobile, $signatureId, $template, $contentVar);
+
+$client->createSignature();
 print_r($response);
