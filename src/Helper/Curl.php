@@ -131,12 +131,12 @@ class Curl{
      * @param array $header ['Content-Type' => 'application/x-www-form-urlencoded']
      * @return Curl
      */
-    public function setHeader($header = [], $isCommon = true){
+    public function setHeader($header = []){
         foreach ($header as $k => $v) {
-            $headers[] = is_string($k) ? sprintf('%s:%s', $k, $v) : $v;
+            $this->_headers[] = is_string($k) ? sprintf('%s:%s', $k, $v) : $v;
         }
 
-        $this->setSetoptVaule(CURLOPT_HTTPHEADER, $headers, $isCommon);
+//        $this->setSetoptVaule(CURLOPT_HTTPHEADER, $headers, $isCommon);
         return $this;
     }
     /**
@@ -195,7 +195,7 @@ class Curl{
 
         if ($method == Curl::METHOD_POST) {
             $this->_setopts[CURLOPT_POST] = true;
-            empty($data) OR $this->_setopts[CURLOPT_POSTFIELDS] = $data;
+            empty($data) OR $this->_setopts[CURLOPT_POSTFIELDS] = (is_array($data) ? http_build_query($data) : $data);
         }
     }
     /**
@@ -205,6 +205,10 @@ class Curl{
     private function create($url, $method, $data){
         $curl = curl_init();
         $this->setUrlSetopt($url, $method, $data);
+        if(!empty($this->_headers)){
+            $this->setSetoptVaule(CURLOPT_HTTPHEADER, $this->_headers);
+        }
+
         $setopts = $this->_setopts + $this->_common;
         foreach ($setopts as $option => $value) {
             curl_setopt($curl, $option, $value);
@@ -266,6 +270,7 @@ class Curl{
         return $this->_error;
     }
 
+    private $_headers = [];
     private $_common = [];  //公共的setopts
     private $_setopts = [];
     private static $_install = null;
