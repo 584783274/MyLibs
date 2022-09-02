@@ -3,6 +3,10 @@
 namespace Kang\Libs\Helper;
 
 class File{
+    /**
+     * @var 删除文件夹
+     * @param $path
+     */
     public static function unlink($path){
         if(file_exists($path)){
             $dn = opendir($path);
@@ -21,7 +25,10 @@ class File{
             }
         }
     }
-
+    /**
+     * @var 读取文件夹
+     * @param $path
+     */
     public static function readDir($path){
         $data = [];
         if(file_exists($path)){
@@ -41,5 +48,15 @@ class File{
         }
     }
 
+    public static function fileLock($filePath, \Closure $closure){
+        $bool = false;
+        $file = fopen($filePath, 'w');
+        if(flock($file, LOCK_EX)){
+            $bool = $closure();
+            flock($file, LOCK_UN);
+        }
 
+        fclose($file);
+        return $bool;
+    }
 }
