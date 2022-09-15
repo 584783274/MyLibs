@@ -823,6 +823,24 @@ class WeChat extends Component {
         }
     }
     //--------------------------微信服务器通知--------------------------------//
+
+    //--------------------------openApi管理--------------------------------//
+    /**
+     * @var 清空api的调用quota
+     * @param string $appid
+     * @return bool
+     */
+    public function clearQuota($appid = ''){
+        $data['appid'] = $appid ? $appid : $this->appid;
+        if(!$this->httpPost(self::API_CLEAR_COUNT, $data, true)){
+            return false;
+        }
+
+        return true;
+    }
+
+    //--------------------------openApi管理--------------------------------//
+
     //--------------------------自定义菜单--------------------------------//
 
     /**
@@ -2346,20 +2364,13 @@ class WeChat extends Component {
         return self::API_QRCODE_IMG_URL . urlencode($ticket);
     }
     //------------------------------二维码--------------------------------//
+
     //------------------------------接口归零-智能接口--------------------------------//
     /**
      * @var 接口调用数进行清零
      * @param string $appid
      * @return bool|void
      */
-    public function clearApiCount($appid = ''){
-        $data['appid'] = $appid ? $appid : $this->appid;
-        if(!$this->httpPost(self::API_CLEAR_COUNT, $data, true)){
-            return false;
-        }
-
-        return true;
-    }
     /**
      * @var 长链接转短连接
      * @param $longUrl

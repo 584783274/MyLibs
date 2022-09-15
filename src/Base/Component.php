@@ -2,6 +2,8 @@
 
 namespace Kang\Libs\Base;
 
+use Closure;
+
 class Component{
     public function __construct($config = []){
         $this->setConfig($config);
@@ -62,15 +64,35 @@ class Component{
         $this->attachBehaviorInternal($name, $behavior, true);
         return $this;
     }
+
     /**
      * @var 添加事件监听
-     * @param $name
-     * @param $handler
+     * @param string $name 事件名称
+     * @param array | Closure $handler
      * @param null $data
+     * @param bool $append
+     * @return $this
+     * @throws ErrorBase
      */
-    public function on($name, $handler, $data = null){
+    public function on($name, $handler, $data = null, $append = true){
         $this->ensureBehaviors();
+        if($append == false){
+            unset($this->_events[$name]);
+        }
+
         $this->_events[$name][] = [$handler, $data];
+        return $this;
+    }
+    /**
+     * @var 解除事件
+     * @param string $name 事件名称
+     * @return $this
+     * @throws ErrorBase
+     */
+    public function off($name){
+        $this->ensureBehaviors();
+        unset($this->_events[$name]);
+        return $this;
     }
     /**
      * @throws ErrorBase
