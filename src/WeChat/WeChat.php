@@ -966,7 +966,7 @@ class WeChat extends Component {
 
     //--------------------------订阅通知接口--------------------------------//
     /**
-     * @var 添加小程序的模板
+     * @var 添加模板
      * @param $tid
      * @param array $kidList
      * @param $sceneDesc
@@ -983,7 +983,7 @@ class WeChat extends Component {
         return $result['priTmplId'];
     }
     /**
-     * @var 删除小程序的模板
+     * @var 删除模板
      * @param $priTmplId
      * @return bool
      */
@@ -995,6 +995,8 @@ class WeChat extends Component {
 
         return true;
     }
+
+
     //--------------------------订阅通知接口--------------------------------//
 
     //------------------------------客服消息--------------------------------//
