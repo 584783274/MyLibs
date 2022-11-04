@@ -20,7 +20,7 @@ class SessionHandlerRedis implements \SessionHandlerInterface{
         $this->_redis = $redis;
         $this->_expire = isset($options['expiretime']) ? (int) $options['expiretime'] : 86400;
         $this->_prefix = isset($options['prefix']) ? $options['prefix'] : 'prefix_';
-    }
+}
 
     /**
      * {@inheritdoc}

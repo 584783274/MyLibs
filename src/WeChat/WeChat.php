@@ -8,7 +8,7 @@ use Kang\Libs\Helper\Curl;
 use Kang\Libs\WeChat\Behavior\WeChatBehavior;
 
 /**
- * Class WeChatBase
+ * Class WeChat
  * @property \Kang\Libs\Base\Behavior $wechatBehavior 监听当前类触发的事件
  * @property string $appid  微信 appid
  * @property string $appsecret  微信 appsecret
@@ -1430,7 +1430,7 @@ class WeChat extends Component {
         return $this->httpPost(self::API_TAG_USER_UNADDS, $data, true);
     }
     //------------------------------用户信息相关--------------------------------//
-    
+
     //------------------------------标签相关--------------------------------//
     /**
      * @var 创建标签

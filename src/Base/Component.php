@@ -7,6 +7,7 @@ use Closure;
 class Component{
     public function __construct($config = []){
         $this->setConfig($config);
+        $this->init();
     }
     /**
      * @var 获取该类扩展为该类提供服务
@@ -233,6 +234,10 @@ class Component{
             'errcode' => $this->_errorCode,
             'errmsg' => $this->_errorMsg,
         ];
+    }
+
+    public function init(){
+
     }
 
     protected $_config = [];

@@ -31,8 +31,7 @@ class Curl{
      * @return bool|mixed
      */
     public function request($url, $data = '', $method = self::METHOD_GET, $isUseCommon = true){
-        !$isUseCommon OR $this->setCommonSetopt();
-        $curl = $this->create($url, $method, $data);
+        $curl = $this->create($url, $method, $data, $isUseCommon);
         return $this->execute($curl);
     }
 
@@ -48,7 +47,7 @@ class Curl{
             $url  = $item['url'];
             $data = isset($item['data']) ? $item['data'] : '';
             $method = isset($item['method']) ? $item['method'] : self::METHOD_GET;
-            $curls[$key] = $this->create($url, $method, $data);
+            $curls[$key] = $this->create($url, $method, $data, $isUseCommon);
             curl_multi_add_handle($multi, $curls[$key]);
         }
 
@@ -81,7 +80,7 @@ class Curl{
      * @param $value
      * @return $this
      */
-    public function setSetoptVaule($option, $value, $isCommon){
+    public function setSetoptVaule($option, $value, $isCommon = false){
         if($isCommon){
             $this->_common[$option] = $value;
         }else{
@@ -136,7 +135,6 @@ class Curl{
             $this->_headers[] = is_string($k) ? sprintf('%s:%s', $k, $v) : $v;
         }
 
-//        $this->setSetoptVaule(CURLOPT_HTTPHEADER, $headers, $isCommon);
         return $this;
     }
     /**
@@ -202,8 +200,9 @@ class Curl{
      * @var 获取创建对象
      * @return resource
      */
-    private function create($url, $method, $data){
+    private function create($url, $method, $data, $isUseCommon = false){
         $curl = curl_init();
+        !$isUseCommon OR $this->setCommonSetopt();
         $this->setUrlSetopt($url, $method, $data);
         if(!empty($this->_headers)){
             $this->setSetoptVaule(CURLOPT_HTTPHEADER, $this->_headers);
