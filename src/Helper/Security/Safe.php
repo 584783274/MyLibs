@@ -1,5 +1,6 @@
 <?php
-namespace Kang\Libs\Helper;
+
+namespace Kang\Libs\Helper\Security;
 
 /**
  * @see https://www.jianshu.com/p/0dcbcfa08ca5
@@ -80,6 +81,7 @@ class Safe{
         unset($data['sign']);
         return $sign == $this->getSign($data);
     }
+
     public function getSign(array $data){
         $data['key'] = $this->_key;
         ksort($data);

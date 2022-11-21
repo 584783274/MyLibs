@@ -12,6 +12,17 @@ require_once './vendor/autoload.php';
 //
 //var_dump($baidu->textOcrByPrecision('./a.webp'));
 
-$service = new \Kang\Libs\Center\Zookeeper\Service();
+//$service = new \Kang\Libs\Center\Zookeeper\Service();
 
-$service->register();
+//$service->register();
+
+
+$service = new \Kang\Libs\WeChat\WeChatEnterprise();
+
+$service->corpid = "wwc43462436bdd414e";
+$service->corpsecret = "audiqsj-7seNhS85G_tlfCEMIhS7-2HcnE8pD4xH_Zg";
+
+
+var_dump($service->getAccessToken());
+
+var_dump($service->getErrors());

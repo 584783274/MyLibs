@@ -14,10 +14,14 @@ use Kang\Libs\Helper\Curl;
  * @package Kang\Libs\WeChat
  */
 class WeChatEnterprise extends Component{
+    use WeChatTrait;
+
     const EVENT_AFTER_REFRESH_ACCESS_TOKEN = 'afterRefreshAccessToken';
     const EVENT_BEFORE_REFRESH_ACCESS_TOKEN = 'beforeRefreshAccessToken';
     const EVENT_ACCESS_TOKEN_CACHE_GET = 'AccessTokenGetCache'; //获取AccessToken缓存
+    const EVENT_ACCESS_TOKEN_ERROR = 'REQUEST_ERROR'; //请求错误
 
+    const EVENT_lOG = 'log'; //请求事件
     //--------------------------通讯录-成员--管理--------------------------------//
     /**
      * @param array $data =
@@ -240,6 +244,54 @@ class WeChatEnterprise extends Component{
     //--------------------------通讯录-成员--管理--------------------------------//
 
     //--------------------------通讯录-部门--管理--------------------------------//
+    /**
+     * @var 部门创建
+     * @param $name
+     * @param $parentid
+     * @param null $order
+     * @param null $id
+     * @return bool|void
+     */
+    public function departmentCreate($name, $parentid, $order = null, $id = null){
+        $data['name'] = $name;
+        $data['parentid'] = $parentid;
+        $data['order'] = $order;
+        $data['id'] = $id;
+
+        return $this->httpPost(static::DEPARTMENT_CREATE, $data, true);
+    }
+    /**
+     * @var 部门更新
+     * @param $id
+     * @param $name
+     * @param null $parentid
+     * @param null $order
+     * @return bool|void
+     */
+    public function departmentUpdate($id, $name, $parentid = null, $order = null){
+        $data['id'] = $id;
+        $data['name'] = $name;
+        $data['parentid'] = $parentid;
+        $data['order'] = $order;
+
+        return $this->httpPost(static::DEPARTMENT_UPDATE, $data, true);
+    }
+    /**
+     * @param $id
+     * @return bool|void
+     */
+    public function departmentDelete($id){
+        $data['id'] = $id;
+        return $this->httpPost(static::DEPARTMENT_DELETE, $data, true);
+    }
+    /**
+     * @param null $id
+     * @return bool|void
+     */
+    public function departmentSearch($id = null){
+        $data['id'] = $id;
+        return $this->httpGet(static::DEPARTMENT_SEARCH, $data, true);
+    }
 
     //--------------------------通讯录-部门--管理--------------------------------//
     /**
@@ -251,11 +303,7 @@ class WeChatEnterprise extends Component{
             $event = new Event();
             $this->trigger(self::EVENT_ACCESS_TOKEN_CACHE_GET, $event);
             if(!empty($event->data)){
-                if(is_string($event->data)){
-                    $this->_config['accessToken'] = $event->data;
-                }elseif (isset($event->data['accessToken'])){
-                    $this->_config['accessToken'] = $event->data['accessToken'];
-                }
+                $this->_config['accessToken'] = isset($event->data['accessToken']) ? $event->data['accessToken'] : $event->data;
             }
         }
 
@@ -289,77 +337,6 @@ class WeChatEnterprise extends Component{
         $this->trigger(self::EVENT_AFTER_REFRESH_ACCESS_TOKEN, $event);
         return $result['access_token'];
     }
-    /**
-     * @var GET请求
-     * @param string $url 请求地址
-     * @param null $data 请求数据
-     * @param bool $autoToken 是否自动获取
-     * @param bool $useCert 是否需要证书
-     * @return bool|void
-     */
-    public function httpGet($url, $data = NULL, $autoToken = false, $useCert = false){
-        return $this->httpRequest($url, Curl::METHOD_GET, $data, $autoToken, false, $useCert);
-    }
-    /**
-     * @var curl POST 请求
-     * @param $url
-     * @param null $data
-     * @param bool $autoToken
-     * @param bool $useCert
-     * @return bool|void
-     */
-    public function httpPost($url, $data = NULL, $autoToken = false, $isFile = false, $useCert = false){
-        return $this->httpRequest($url, Curl::METHOD_POST, $data, $autoToken, $isFile, $useCert);
-    }
-
-    /**
-     * @var curl请求
-     * @param string $url 请求地址
-     * @param string $method 请求方法
-     * @param null   $data 请求数据
-     * @param bool   $autoToken  是否自动获取 AccessToken
-     * @param bool   $useCert 是否增加安全证书
-     * @return bool|void
-     */
-    public function httpRequest($url, $method, $data = NULL, $autoToken = false, $isFile = false, $useCert = false){
-        $requestUrl = self::BASE_URL . $url;
-        $event = new Event();
-        $event->data['url'] = $url;
-        $event->data['method'] = $method;
-        $event->data['data'] = $data;
-        $this->trigger(self::EVENT_lOG, $event);
-
-        $this->parseRequestData($data, $method, $isFile);
-        if ($autoToken) {
-            if(!$token = $this->accessToken) {
-                return false;
-            }
-
-            $requestUrl = sprintf($requestUrl, $token);
-        }
-
-        $curl = Curl::getInstall();
-        !$useCert OR $curl->setSslCert($this->sslCertPath, $this->sslKeyPath, 'PEM', false);
-
-        $result = $curl->request($requestUrl, $data, $method);
-        if($result === false){
-            return $this->setErrors(-1, $curl->getError());
-        }
-
-        if(!$result = $this->responseResult($result)){
-            if($this->getErrorCode() == 42001){
-                $this->setAccessToken('');
-                $this->trigger(self::EVENT_ACCESS_TOKEN_ERROR, $event);
-                if($this->getAccessToken() && $autoToken){
-                    return $this->httpRequest($url, $method, $data, $autoToken, $isFile, $useCert);
-                }
-            }
-
-            return false;
-        }
-
-        return $result;
-    }
 
     public function setAccessToken($accessToken){
         $this->_config['accessToken'] = $accessToken;
@@ -374,7 +351,7 @@ class WeChatEnterprise extends Component{
         return $this;
     }
 
-    const BASE_URL = 'https =>//qyapi.weixin.qq.com/';
+    const BASE_URL = 'https://qyapi.weixin.qq.com/';
     const GET_TOKEN = 'cgi-bin/gettoken?';
 
     const USER_CREATE_URL = 'cgi-bin/user/create?access_token=%s';
@@ -392,4 +369,9 @@ class WeChatEnterprise extends Component{
     const USER_ID_GET_URL = 'cgi-bin/user/getuserid?access_token=%s';
     const USER_ID_GET_EMAIL_URL = 'cgi-bin/user/get_userid_by_email?access_token=%s';
     const USER_ID_SELECT_URL = 'cgi-bin/user/list_id?access_token=%s';
+
+    const DEPARTMENT_CREATE = 'cgi-bin/department/create?access_token=%s';
+    const DEPARTMENT_UPDATE = 'cgi-bin/department/update?access_token=%s';
+    const DEPARTMENT_DELETE = 'cgi-bin/department/delete?access_token=%s';
+    const DEPARTMENT_SEARCH = 'cgi-bin/department/list?access_token=%s';
 }
