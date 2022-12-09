@@ -5,6 +5,7 @@
 namespace Kang\Libs\Baidu;
 
 use Kang\Libs\Baidu\Behavior\BaiduBehavior;
+use Kang\Libs\Baidu\Extend\Text;
 use Kang\Libs\Base\Behavior;
 use Kang\Libs\Base\Component;
 use Kang\Libs\Base\Event;
