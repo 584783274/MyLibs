@@ -13,10 +13,11 @@ use Kang\Libs\Helper\Curl;
 /**
  * @var 百度接口使用
  * Class Baidu
+ * @property Text $text;
  * @property Behavior $baiduBehavior 监听当前类触发的事件
- * @property string $secret //fLonwrXk5GyrGtozKQwsemgQIf0uGoT8
- * @property string $appid //16311988
- * @property string $appkey //t6Btp0q3geueme9GSllIvAHq
+ * @property string $secret //tl0v8HjM8UsXqWemsGHgOLKioCO1i3LT
+ * @property string $appid //28937645
+ * @property string $appkey //Ak5kyVTlrde5epeH8NVX7bjn
  * @package MyLibs\Baidu
  */
 class Baidu extends Component {
@@ -34,24 +35,13 @@ class Baidu extends Component {
             $this->baiduBehavior,
         ];
     }
-    /**
-     * @var 高精度图片文字识别
-     * @param string $imagePath
-     * @param string $pdfFilePath
-     * @param string $imageUrl
-     * @return bool|mixed
-     */
-    public function textOcrByPrecision($imagePath = '', $pdfFilePath = '', $imageUrl = ''){
-        if($imagePath && file_exists($imagePath)){
-            $data['image'] = base64_encode(file_get_contents($imagePath));
-        }elseif ($pdfFilePath && file_exists($pdfFilePath)){
-            $data['pdf_file'] = base64_encode(file_get_contents($pdfFilePath));
-        }elseif ($imageUrl){
-            $data['url'] = $imageUrl;
-        }
 
-        return $this->post('rest/2.0/ocr/v1/accurate_basic?access_token=', $data, true);
+    public function extends(){
+        return [
+            'text' => Text::class,
+        ];
     }
+
     /**
      * @var 获取AccessToken
      * @return mixed
@@ -116,6 +106,7 @@ class Baidu extends Component {
     public function request($url, $method, $autoToken = false, $data = null, $headers = ['Content-Type' => 'application/x-www-form-urlencoded']){
         $url = self::API_BASE_URL . $url;
         $event = new Event();
+        $event->sender = $this;
         $event->data['url'] = $url;
         $event->data['method'] = $method;
         $event->data['data'] = $data;
@@ -168,14 +159,17 @@ class Baidu extends Component {
         $this->_config['secret'] = $value;
         return $this;
     }
+
     public function setAppkey($value){
         $this->_config['appkey'] = $value;
         return $this;
     }
+
     public function setBaiduBehavior(Behavior $behavior){
         $this->_config['behavior'] = $behavior;
         return $this;
     }
+
     public function getBaiduBehavior(){
         return $this->_config['behavior'] ?? BaiduBehavior::class;
     }

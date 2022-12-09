@@ -11,7 +11,7 @@ class BaiduSms extends Baidu{
     public function signatureApply(string $content, $contentType, $countryType = 'DOMESTIC', $description = '', $signatureFilePath = ''){
 
 
-        return $this->post('')
+        return $this->post('');
     }
     public function post($url, $data = [], $autoToken = false){
         $headers['Authorization'] = $this->getAccessToken();

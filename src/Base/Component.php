@@ -16,7 +16,13 @@ class Component{
     public function behaviors() : array {
         return [];
     }
-
+    /**
+     * @var 伪多继承
+     * @return array
+     */
+    public function extends(){
+        return [];
+    }
     /**
      * @var 事件触发
      * @param $name 事件名称
@@ -108,6 +114,50 @@ class Component{
     }
     /**
      * @param $name
+     * @return mixed|null
+     */
+    public function getExtend($name){
+        $this->ensureExtends();
+        return $this->_extends[$name] ?? null;
+    }
+
+    public function ensureExtends(){
+        if ($this->_extends === null) {
+            $this->_extends = [];
+            foreach ($this->extends() as $name => $extend) {
+                $this->attachExtendInternal($name, $extend);
+            }
+        }
+    }
+
+    private function attachExtendInternal($name, $extend){
+        try{
+            if(!is_object($extend)){
+                $class = '';
+                if(is_string($extend)){
+                    $class = $extend;
+                }else if(is_array($extend)){
+                    if(isset($extend['class'])){
+                        $class = $extend['class'];
+                        unset($extend['class']);
+                        $params = $extend;
+                    }else{
+                        $class = array_shift($extend);
+                        $params = $extend;
+                    }
+                }
+
+                $params['sender'] = $this;
+                $extend = new $class($params);
+            }
+        }catch (\Exception $exception){
+            throw new ErrorBase($name . '扩展' . $exception->getMessage(), 1, $exception);
+        }
+
+        $this->_extends[$name] = $extend;
+    }
+    /**
+     * @param $name
      * @param $behavior
      * @return Behavior|mixed
      * @throws ErrorBase
@@ -144,10 +194,7 @@ class Component{
      */
     public function setConfig($config = []){
         foreach($config as $attr => $value){
-            $attr = 'set' . ucfirst($attr);
-            if (method_exists($this, $attr)){
-                $this->$attr($value);
-            }
+            $this->$attr = $value;
         }
     }
     /**
@@ -180,7 +227,7 @@ class Component{
             return $this->{$attr}();
         }
 
-        return $this->_config[$name] ?? null;
+        return $this->_config[$name] ?? $this->getExtend($name);
     }
     /**
      * @param $name
@@ -245,4 +292,5 @@ class Component{
     private $_errorCode = 0;
     private $_errorMsg = '';
     private $_behaviors = null;
+    private $_extends = null;
 }

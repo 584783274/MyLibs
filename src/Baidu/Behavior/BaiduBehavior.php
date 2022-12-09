@@ -7,7 +7,7 @@ use Kang\Libs\Base\Behavior;
 use Kang\Libs\Base\Event;
 use Kang\Libs\Helper\FileCache;
 
-class BaiduBehavior extends Behavior {
+class BaiduBehavior extends Behavior{
     public function events(){
         return [
             Baidu::EVENT_ACCESS_TOKEN_ERROR => [$this, 'errorAccessToken'],
@@ -23,7 +23,6 @@ class BaiduBehavior extends Behavior {
      * @param Event $event
      */
     public function errorAccessToken(Event $event){
-        $wechat = $event->sender;
         FileCache::getInstall()->set($this->getCacheKey($event->sender), null);
     }
     /**
