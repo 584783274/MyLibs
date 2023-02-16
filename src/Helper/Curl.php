@@ -107,17 +107,6 @@ class Curl{
      * @return array
      */
     public function setCommonSetopt(array $setopts = [], $append = true){
-        if(empty($setopts)){
-            $setopts[CURLOPT_HEADER] = 0;// 显示返回的Header区域内容
-            $setopts[CURLOPT_RETURNTRANSFER] = 1; // 获取的信息以文件流的形式返回
-            $setopts[CURLOPT_FOLLOWLOCATION] = true;// 使用自动跳转
-            $setopts[CURLOPT_AUTOREFERER] = true;//自动设置Referer
-            $setopts[CURLOPT_TIMEOUT] = 5; // 设置超时限制防止死循环
-//            if(isset($_SERVER['HTTP_USER_AGENT']) && !isset($this->common[CURLOPT_USERAGENT])){
-//                $setopts[CURLOPT_USERAGENT] = $_SERVER['HTTP_USER_AGENT'];
-//            }
-        }
-
         if(!$append){
             $this->_common = [];
         }
@@ -200,9 +189,9 @@ class Curl{
      * @var 获取创建对象
      * @return resource
      */
-    private function create($url, $method, $data, $isUseCommon = false){
+    private function create($url, $method, $data){
         $curl = curl_init();
-        !$isUseCommon OR $this->setCommonSetopt();
+        $this->setCommonSetopt();
         $this->setUrlSetopt($url, $method, $data);
         if(!empty($this->_headers)){
             $this->setSetoptVaule(CURLOPT_HTTPHEADER, $this->_headers);
@@ -270,7 +259,16 @@ class Curl{
     }
 
     private $_headers = [];
-    private $_common = [];  //公共的setopts
+
+    //公共的setopts
+    private $_common = [
+        CURLOPT_HEADER => 0, // 显示返回的Header区域内容
+        CURLOPT_RETURNTRANSFER => 1, // 获取的信息以文件流的形式返回
+        CURLOPT_FOLLOWLOCATION => true, // 使用自动跳转
+        CURLOPT_AUTOREFERER => true, //自动设置Referer
+        CURLOPT_TIMEOUT => 5,// 设置超时限制防止死循环
+    ];
+
     private $_setopts = [];
     private static $_install = null;
     private $_error = null;
