@@ -99,7 +99,6 @@ class FileCache{
         $data = null;
         $file = fopen($path, 'r');
         if(flock($file, LOCK_SH)){
-            $data = null;
             if($size = filesize($path)){
                 $data = fread($file, filesize($path));
             }

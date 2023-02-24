@@ -2,12 +2,11 @@
 
 namespace Kang\Libs\WeChat\Library;
 /**
- * @var 自定义菜单
+ *  自定义菜单
  * Trait TraitMenu
  * @package Kang\Libs\WeChat\Library
  */
-trait TraitMenu{
-    //--------------------------自定义菜单--------------------------------//
+trait Menu{
     /**
      * @var 创建菜单
      * @param array $button 菜单按钮 [['name' => '菜单名称','sub_button' => [子菜单],
@@ -22,12 +21,12 @@ trait TraitMenu{
      * @param array $matchrule 个性化菜单匹配规则--"tag_id": 用户标签的id ,"client_platform_type": 客户端版本,当前只具体到系统型号：IOS(1), Android(2),Others(3)
      * @return bool
      */
-    public function menuByCreate(array $button, $matchrule = []){
+    public function menuCreate(array $button, $matchrule = []){
         $menu['button'] = $button;
-        $url = self::API_MENU_CREATE;
+        $url = Urls::MENU_BASE_CREATE;
         if(!empty($matchrule)){
             $menu['matchrule'] = $matchrule;
-            $url = self::API_MENU_CREATE_PER;
+            $url = Urls::MENU_CONDITIONAL_CREATE;
         }
 
         if(!$result = $this->httpPost($url, $menu, true)){
@@ -38,34 +37,36 @@ trait TraitMenu{
     }
     /**
      * @var 菜单查询
-     * @param bool $isCustom true 返回通过接口创建的菜单 false 返回接口或者其他方式创建的菜单
-     * @return bool|void
+     * @return bool|[is_menu_open=> 菜单是否开启，0代表未开启，1代表开启, 'selfmenu_info' => []//菜单信息]
      */
-    public function menuByfind($isCustom = true){
-        $url = $isCustom ? self::API_MENU_SELECT_PER :  self::API_MENU_SELECT;
-        return $this->httpGet($url, null, true);
+    public function menuGet(){
+        return $this->httpGet( Urls::MENU_BASE_GET, null, true);
     }
     /**
      * @var 删除菜单
      * @param null $menuid 个体化菜单ID
      * @return bool|void
      */
-    public function menuByDel($menuid = null){
+    public function menuDel($menuid = null){
         if($menuid){
             $data = ['menuid' => $menuid];
-            return $this->httpPost(self::API_MENU_DELETE_PER, $data, true);
+            return $this->httpPost(Urls::MENU_CONDITIONAL_DEL, $data, true);
         }
 
-        return $this->httpGet(self::API_MENU_DELETE, null, true);
+        return $this->httpGet(Urls::MENU_BASE_DEL, null, true);
     }
+
     /**
      * @var 个性化菜单用户匹配结果
-     * @param $userId 可以是粉丝的OpenID，也可以是粉丝的微信号。
+     * @param string $userId 可以是粉丝的OpenID，也可以是粉丝的微信号。
      * @return bool|array
      */
-    public function menuByMatch($userId){
+    public function menuMatch($userId){
         $data['user_id'] = $userId;
-        return $this->httpPost(self::API_MENU_MATCH_PER, $data, true);
+        if(!$result =  $this->httpPost(Urls::MENU_CONDITIONAL_MATCH, $data, true)){
+            return false;
+        }
+
+        return $result['button'];
     }
-    //--------------------------自定义菜单--------------------------------//
 }

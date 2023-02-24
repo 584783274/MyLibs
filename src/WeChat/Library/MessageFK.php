@@ -1,59 +1,69 @@
 <?php
 
+namespace Kang\Libs\WeChat\Library;
 
-trait TraitKfMessage{
-    //------------------------------客服消息--------------------------------//
+/**
+ *客服消息
+ * Trait MessageFK
+ * @package Kang\Libs\WeChat\Library
+ */
+trait MessageFK{
     /**
-     * @var 创建客服
-     * @param string $account 账户
-     * @param string $password 密码
+     * @var 创建客服帐号
+     * @param $account 账户 账号前缀@公众号微信号
+     * @param $password 密码
      * @param string $nickname 昵称
      * @return bool
+     *
      */
-    public function kfAccountByCreate($kfAccount, $nickname, $password){
-        $data['kf_account'] = $kfAccount;
+    public function messageFKCreate($account, $nickname, $password){
+        $data['kf_account'] = $account;
         $data['nickname']   = $nickname;
         $data['password']   = $password;
-        if(!$this->httpPost(self::API_CUSTOM_SERVICE_ACCOUNT_ADD, $data, true)){
+        if(!$this->httpPost(Urls::MESSAGE_KF_ACCOUNT_CREATE, $data, true)){
             return false;
         }
 
         return true;
     }
     /**
-     * @var 修改客服
-     * @param string $account 账户
-     * @param string $password 密码
+     * @var 修改客服帐号
+     * @param $account 账户
+     * @param $password 密码
      * @param string $nickname 昵称
+     * @return bool
+     *
      */
-    public function kfAccountByModify($account, $password, $nickname){
+    public function messageFKModify($account, $nickname, $password){
         $data['kf_account'] = $account;
         $data['nickname']   = $nickname;
         $data['password']   = $password;
-        if(!$this->httpPost(self::API_CUSTOM_SERVICE_ACCOUNT_UPDATE, $data, true)){
+        if(!$this->httpPost(Urls::MESSAGE_KF_ACCOUNT_MODIFY, $data, true)){
             return false;
         }
 
         return true;
     }
     /**
-     * @var 删除客服
-     * @param string $account 账户
+     * @var 删除客服账户
+     * @param $account
+     * @return bool
      */
-    public function kfAccountByDel($account){
+    public function messageFKDel($account){
         $data['kf_account'] = $account;
-        if(!$this->httpPost(self::API_CUSTOM_SERVICE_ACCOUNT_DEL, $data, true)){
+        if(!$this->httpPost(Urls::MESSAGE_KF_ACCOUNT_DEL, $data, true)){
             return false;
         }
 
         return true;
     }
+
     /**
      * @var 上传客户头像
-     * @param string $account
-     * @param string $imgPath
+     * @param $account
+     * @param $imgPath
      */
-    public function kfAccountHeadimgByUpload($account, $imgPath){
+    public function messageKfHeadimg($account, $imgPath){
         $imgPath = realpath($imgPath);
         if($imgPath == false){
             return $this->setErrors('图片文件不存在!');
@@ -62,7 +72,7 @@ trait TraitKfMessage{
         $imgType = pathinfo($imgPath)['extension'];
         $data['headimg'] = class_exists('\CURLFile') ? new \CURLFile($imgPath, $imgType, $account . '.' . $imgType) : '@' . $imgPath;
         $data['kf_account'] = $account;
-        if(!$this->httpPost(self::API_CUSTOM_SERVICE_ACCOUNT_HEAD, $data, true, true)){
+        if(!$this->httpPost(Urls::MESSAGE_KF_ACCOUNT_HEAD, $data, true, true)){
             return false;
         }
 
@@ -70,22 +80,23 @@ trait TraitKfMessage{
     }
     /**
      * @var 获取客服列表
-     * @return bool|array
+     * @return bool
      */
-    public function kfAccountBySelect(){
-        if(!$result = $this->httpGet(self::API_CUSTOM_SERVICE_ACCOUNT_LIST, null, true)){
+    public function  messageKfSelect(){
+        if(!$result = $this->httpGet(Urls::MESSAGE_KF_ACCOUNT_SELECT, null, true)){
             return false;
         }
 
-        return $result['kf_list'];
+        return $result;
     }
+
     /**
      * @var 发送客户消息
      * @param array $data
-     * @return bool|void
+     * @return bool
      */
-    public function kfMessageBySend(array $data){
-        if(!$this->httpPost(self::API_MESSAGE_CUSTOM_SEND, $data, true)){
+    public function messageKfSend(array $data){
+        if(!$this->httpPost(Urls::MESSAGE_KF_ACCOUNT_SEND, $data, true)){
             return false;
         }
 
@@ -96,12 +107,12 @@ trait TraitKfMessage{
      * @param $touser
      * @param $content <a href="http://www.qq.com" data-miniprogram-appid="appid" data-miniprogram-path="pages/index/index">点击跳小程序</a>
      */
-    public function kfMessageBySendTxt($touser, $content){
+    public function messageKfSendTxt($touser, $content){
         $data['touser'] = $touser;
         $data['msgtype'] = 'text';
         $data['text']['content'] = $content;
 
-        return $this->kfMessageBySend($data);
+        return $this->messageKfSend($data);
     }
     /**
      * @var 发送图文消息
@@ -109,24 +120,24 @@ trait TraitKfMessage{
      * @param array $articles 1篇图文消息 ["title":"Happy Day",
     "description":"Is Really A Happy Day","url":"URL","picurl":"PIC_URL"]
      */
-    public function kfMessageBySendNews($touser, array $articles){
+    public function messageKfSendNews($touser, array $articles){
         $data['touser'] = $touser;
         $data['msgtype'] = 'news';
         $data['news']['articles'][] = $articles;
 
-        return $this->sendKfAccount($data);
+        return $this->messageKfSend($data);
     }
     /**
      * @var 发送图文消息
      * @param string $touser
      * @param string $media_id
      */
-    public function kfMessageBySendNewsMp($touser, $media_id){
+    public function messageKfSendNewsMp($touser, $media_id){
         $data['touser'] = $touser;
         $data['msgtype'] = 'mpnews';
         $data['mpnews']['media_id'] = $media_id;
 
-        return $this->sendKfAccount($data);
+        return $this->messageKfSend($data);
     }
     /**
      * @var 发送菜单消息
@@ -135,38 +146,38 @@ trait TraitKfMessage{
      * @param string $head_content //您对本次服务是否满意呢?
      * @param string $tail_content //欢迎再次光临
      */
-    public function kfMessageBySendMenu($touser, array $list, $head_content, $tail_content){
+    public function messageKfSendMenu($touser, array $list, $head_content, $tail_content){
         $data['touser'] = $touser;
         $data['msgtype'] = 'msgmenu';
         $data['msgmenu']['head_content'] = $head_content;
         $data['msgmenu']['list'] = $list;
         $data['msgmenu']['tail_content'] = $tail_content;
 
-        return $this->sendKfAccount($data);
+        return $this->messageKfSend($data);
     }
     /**
      * @var 发送图片消息
      * @param string $touser
      * @param string $media_id
      */
-    public function kfMessageBySendImage($touser, $media_id){
+    public function messageKfSendImage($touser, $media_id){
         $data['touser'] = $touser;
         $data['msgtype'] = 'image';
         $data['image']['media_id'] = $media_id;
 
-        return $this->sendKfAccount($data);
+        return $this->messageKfSend($data);
     }
     /**
      * @var 发送语音消息
      * @param $touser
      * @param $media_id
      */
-    public function kfMessageBySendVoice($touser, $media_id){
+    public function messageKfSendVoice($touser, $media_id){
         $data['touser'] = $touser;
         $data['msgtype'] = 'voice';
         $data['voice']['media_id'] = $media_id;
 
-        return $this->sendKfAccount($data);
+        return $this->messageKfSend($data);
     }
     /**
      * @var 发送视频消息
@@ -177,7 +188,7 @@ trait TraitKfMessage{
      * @param string $description
      * @return bool|void
      */
-    public function kfMessageBySendVodeo($touser, $media_id, $thumb_media_id, $title = '', $description = ''){
+    public function messageKfSendVodeo($touser, $media_id, $thumb_media_id, $title = '', $description = ''){
         $data['touser'] = $touser;
         $data['msgtype'] = 'video';
         $data['video']['media_id'] = $media_id;
@@ -185,7 +196,7 @@ trait TraitKfMessage{
         $data['video']['title'] = $title;
         $data['video']['description'] = $description;
 
-        return $this->sendKfAccount($data);
+        return $this->messageKfSend($data);
     }
     /**
      * @var 发送卡券 仅支持非自定义Code码和导入code模式的卡券的卡券
@@ -193,12 +204,12 @@ trait TraitKfMessage{
      * @param string $card_id
      * @return bool|void
      */
-    public function kfMessageBySendCard($touser, $card_id){
+    public function messageKfSendCard($touser, $card_id){
         $data['touser'] = $touser;
         $data['msgtype'] = 'wxcard';
         $data['wxcard']['card_id'] = $card_id;
 
-        return $this->sendKfAccount($data);
+        return $this->messageKfSend($data);
     }
     /**
      * @var 发送小程序卡片（要求小程序与公众号已关联）
@@ -208,7 +219,7 @@ trait TraitKfMessage{
      * @param string $thumb_media_id
      * @param string $title
      */
-    public function kfMessageBySendMiniprogrampage($touser, $appid, $pagepath, $thumb_media_id, $title = ''){
+    public function messageKfSendMiniprogrampage($touser, $appid, $pagepath, $thumb_media_id, $title = ''){
         $data['touser'] = $touser;
         $data['msgtype'] = 'miniprogrampage';
         $data['miniprogrampage'] = [
@@ -218,7 +229,7 @@ trait TraitKfMessage{
             'thumb_media_id' => $thumb_media_id
         ];
 
-        return $this->sendKfAccount($data);
+        return $this->messageKfSend($data);
     }
     /**
      * @var 小程序图文消息
@@ -227,13 +238,12 @@ trait TraitKfMessage{
      * @param string $url 图文链接消息被点击后跳转的链接
      * @param string $thumb_url 图文链接消息的图片链接，支持 JPG、PNG 格式，较好的效果为大图 640 X 320，小图 80 X 80
      */
-    public function kfMessageBySendLink($title, $description, $url, $thumb_url){
+    public function messageKfSendLink($title, $description, $url, $thumb_url){
         $data['title'] = $title;
         $data['description'] = $description;
         $data['url'] = $url;
         $data['thumb_url'] = $thumb_url;
 
-        return $this->sendKfAccount($data);
+        return $this->messageKfSend($data);
     }
-    //------------------------------客服消息--------------------------------//
 }

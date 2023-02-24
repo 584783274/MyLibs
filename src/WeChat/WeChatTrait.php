@@ -2,12 +2,131 @@
 
 namespace Kang\Libs\WeChat;
 
+use Kang\Libs\Base\Component;
 use Kang\Libs\Base\Event;
 use Kang\Libs\Helper\Curl;
+use Kang\Libs\WeChat\Behavior\WeChatBehavior;
+/**
+ * Class WeChatTrait
+ * @package Kang\Libs\WeChat
+ */
+abstract class WeChatTrait extends Component{
+    public $_text_filter = false;
 
-trait WeChatTrait{
+    const LANG_ZH_CN = 'zh_CN'; //简体
+    const LANG_ZH_TW = 'zh_TW'; //繁体
+    const LANG_EN = 'en'; //英语
+    const SCOPE_BASE = 'snsapi_base'; //不弹出授权页面，直接跳转，只能获取用户openid
+    const SCOPE_USER_INFO = 'snsapi_userinfo'; //不弹出授权页面，直接跳转，只能获取用户openid
+    const QR_SCENE = 'QR_SCENE'; //临时的整型参数值
+    const QR_STR_SCENE = 'QR_STR_SCENE'; //为临时的字符串参数值，
+    const QR_LIMIT_SCENE = 'QR_LIMIT_SCENE'; //永久的整型参数值
+    const QR_LIMIT_STR_SCENE = 'QR_LIMIT_STR_SCENE'; //永久的字符串参数值
+    const TYPE_ALL = 0; // 普通评论&精选评论
+    const TYPE_ORD = 1; // 普通评论
+    const TYPE_FEATURED = 1; //精选评论
+    const TYPE_IMAGE = 'image'; //图片
+    const TYPE_VOICE = 'voice'; //语音
+    const TYPE_VIDEO = 'video'; //视频
+    const TYPE_THUMB = 'thumb'; //缩略图
+
+    const EVENT_AFTER_REFRESH_ACCESS_TOKEN = 'afterRefreshAccessToken'; //监听普通公众号跟授权第三方时公众号的AccessToken刷新事件
+    const EVENT_BEFORE_REFRESH_ACCESS_TOKEN = 'beforeRefreshAccessToken'; //监听普通公众号跟授权第三方时公众号的AccessToken刷新事件
+    const EVENT_REFRESH_JS_API_TICKET = 'refreshJsapiTicket'; //监听刷新事件
+    const EVENT_ACCESS_TOKEN_ERROR = 'errorAccessToken'; //监听AccessToken发生 42001|40001错误
+    const EVENT_lOG = 'log'; //日志事件
+    const EVENT_REFRESH_COMPONENT_ACCESS_TOKEN = 'componentAccessToken'; //监听第三方平台的AccessToken 刷新
+    const EVENT_ACCESS_TOKEN_CACHE_GET = 'AccessTokenGetCache'; //获取AccessToken缓存
+
+    const MSGTYPE_TEXT = 'text';
+    const MSGTYPE_IMAGE = 'image';
+    const MSGTYPE_LOCATION = 'location';
+    const MSGTYPE_LINK = 'link';
+    const MSGTYPE_EVENT = 'event';
+    const MSGTYPE_MUSIC = 'music';
+    const MSGTYPE_NEWS = 'news';
+    const MSGTYPE_VOICE = 'voice';
+    const MSGTYPE_VIDEO = 'video';
+
+    const EVENT_SUBSCRIBE = 'subscribe';       //订阅
+    const EVENT_UNSUBSCRIBE = 'unsubscribe';   //取消订阅
+    const EVENT_SCAN = 'SCAN';                 //扫描带参数二维码
+    const EVENT_LOCATION = 'LOCATION';         //上报地理位置
+    const EVENT_MENU_VIEW = 'VIEW';                     //菜单 - 点击菜单跳转链接
+    const EVENT_MENU_CLICK = 'CLICK';                   //菜单 - 点击菜单拉取消息
+    const EVENT_MENU_SCAN_PUSH = 'scancode_push';       //菜单 - 扫码推事件(客户端跳URL)
+    const EVENT_MENU_SCAN_WAITMSG = 'scancode_waitmsg'; //菜单 - 扫码推事件(客户端不跳URL)
+    const EVENT_MENU_PIC_SYS = 'pic_sysphoto';          //菜单 - 弹出系统拍照发图
+    const EVENT_MENU_PIC_PHOTO = 'pic_photo_or_album';  //菜单 - 弹出拍照或者相册发图
+    const EVENT_MENU_PIC_WEIXIN = 'pic_weixin';         //菜单 - 弹出微信相册发图器
+    const EVENT_MENU_LOCATION = 'location_select';      //菜单 - 弹出地理位置选择器
+    const EVENT_SEND_MASS = 'MASSSENDJOBFINISH';        //发送结果 - 高级群发完成
+    const EVENT_SEND_TEMPLATE = 'TEMPLATESENDJOBFINISH'; //发送结果 - 模板消息发送结果
+    const EVENT_KF_SEESION_CREATE = 'kfcreatesession';  //多客服 - 接入会话
+    const EVENT_KF_SEESION_CLOSE = 'kfclosesession';    //多客服 - 关闭会话
+    const EVENT_KF_SEESION_SWITCH = 'kfswitchsession';  //多客服 - 转接会话
+    const EVENT_CARD_PASS = 'card_pass_check';          //卡券 - 审核通过
+    const EVENT_CARD_NOTPASS = 'card_not_pass_check';   //卡券 - 审核未通过
+    const EVENT_CARD_USER_GET = 'user_get_card';        //卡券 - 用户领取卡券
+    const EVENT_CARD_USER_DEL = 'user_del_card';        //卡券 - 用户删除卡券
+    const EVENT_MERCHANT_ORDER = 'merchant_order';        //微信小店 - 订单付款通知
+
+    public function behaviors(): array{
+        return [
+            WeChatBehavior::class,
+        ];
+    }
+
     /**
-     * @var GET请求
+     * 是否微信浏览器
+     * @return bool
+     */
+    public static function isWechatBrower(){
+        return (stripos($_SERVER['HTTP_USER_AGENT'], 'MicroMessenger') !== false);
+    }
+
+    /**
+     * 是否是本地浏览
+     * @return bool
+     */
+    public static function isRemoteHost(){
+        $a = stripos($_SERVER["SERVER_NAME"], "localhost");
+        $b = stripos($_SERVER["SERVER_NAME"], "127.0.0.1");
+        $c = stripos($_SERVER["SERVER_NAME"], "192.168");
+        return ($a === false && $b === false && $c === false);
+    }
+
+    /**
+     *  判断是否为https
+     * @return bool
+     */
+    public static function isHttps(){
+        if (!empty($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) !== 'off') {
+            return true;
+        } elseif (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') {
+            return true;
+        } elseif (!empty($_SERVER['HTTP_FRONT_END_HTTPS']) && strtolower($_SERVER['HTTP_FRONT_END_HTTPS']) !== 'off') {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     *  获取当前地址
+     * @param $redirectUrl
+     * @return string
+     */
+    public static function getRedirectUrl($redirectUrl = null){
+        if (empty($redirectUrl)) {
+            $redirectUrl = (self::isHttps() ? 'https://' : 'http://') . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+        }
+
+        return $redirectUrl;
+    }
+
+    /**
+     * GET请求
      * @param string $url 请求地址
      * @param null $data 请求数据
      * @param bool $autoToken 是否自动获取
@@ -22,7 +141,7 @@ trait WeChatTrait{
         return $this->httpRequest($url, Curl::METHOD_GET, null, $autoToken, false, $useCert);
     }
     /**
-     * @var curl POST 请求
+     * curl POST 请求
      * @param $url
      * @param null $data
      * @param bool $autoToken
@@ -33,7 +152,7 @@ trait WeChatTrait{
         return $this->httpRequest($url, Curl::METHOD_POST, $data, $autoToken, $isFile, $useCert);
     }
     /**
-     * @var curl请求
+     * curl请求
      * @param string $url 请求地址
      * @param string $method 请求方法
      * @param null   $data 请求数据
@@ -51,7 +170,6 @@ trait WeChatTrait{
         $event->data['useCert'] = $useCert;
 
         $this->trigger(self::EVENT_lOG, $event);
-        $url = self::BASE_URL . $url;
         $this->parseRequestData($data, $method, $isFile);
         $token = '';
         if ($autoToken && !$token = $this->accessToken) {
@@ -60,8 +178,10 @@ trait WeChatTrait{
 
         $url .= $token;
         $curl = Curl::getInstall();
+        $curl->setHeader(['content-type' => 'application/json']);
         !$useCert OR $curl->setSslCert($this->sslCertPath, $this->sslKeyPath, 'PEM', false);
         $result = $curl->request($url, $data, $method);
+
         if($result === false){
             return $this->setErrors(-1, $curl->getError());
         }
@@ -76,7 +196,7 @@ trait WeChatTrait{
     }
 
     protected function responseResult($result, Event $event){
-        $result = json_decode($result, JSON_UNESCAPED_UNICODE);
+            $result = $result ? json_decode($result, JSON_UNESCAPED_UNICODE) : null;
         if($result === null){
             return $result;
         }
@@ -170,6 +290,7 @@ trait WeChatTrait{
         42002 => 'refresh_token 超时',
         42003 => 'oauth_code 超时',
         42007 => '用户修改微信密码，需要重新授权',
+        42010 => '相同 media_id 群发过快，请重试',
         43001 => '需要 GET 请求',
         43002 => '需要 POST 请求',
         43003 => '需要 HTTPS 请求',
@@ -182,7 +303,6 @@ trait WeChatTrait{
         44004 => '文本消息内容为空',
         45001 => '多媒体文件大小超过限制',
         45002 => '消息内容超过限制',
-        45003 => '标题字段超过限制',
         45003 => '标题字段超过限制',
         45004 => '描述字段超过限制',
         45005 => '链接字段超过限制',
@@ -199,6 +319,11 @@ trait WeChatTrait{
         45047 => '客服接口下行条数超过上限',
         45056 => '创建的标签数过多，请注意不能超过100个',
         45058 => '微信默认标签，禁止操作',
+        45064 => '创建菜单包含未关联的小程序',
+        45065 => '相同 clientmsgid 已存在群发记录，返回数据中带有已存在的群发任务的 msgid',
+        45066 => '相同 clientmsgid 重试速度过快，请间隔1分钟重试',
+        45067 => 'clientmsgid 长度超过限制',
+        45110 => '作者字数超出限制',
         45157 => '标签名非法，请注意不能和其他标签重名',
         45158 => '标签名长度超过30个字节',
         46001 => '不存在媒体数据',
@@ -206,15 +331,21 @@ trait WeChatTrait{
         46003 => '不存在的菜单数据',
         46004 => '不存在的用户',
         47001 => '解析 JSON/XML 内容错误',
+        47003 => '参数值不符合限制要求，详情可参考参数值内容限制说明',
         48001 => 'api 功能未授权,请确认公众号已获得该接口!',
         48002 => '粉丝关闭了接收消息',
         48004 => 'api 接口被封禁',
         48005 => 'api 禁止删除被自动回复和自定义菜单引用的素材',
         48006 => 'api 禁止清零调用次数，因为清零次数达到上限',
         48008 => '没有该类型消息的发送权限',
+        48021 => '自动保存的草稿无法预览/发送，请先手动保存草稿',
         50001 => '用户未授权该 api',
         50002 => '用户受限，可能是违规后接口被封禁',
         50005 => '用户未关注公众号',
+        53500 => '发布功能被封禁',
+        53501 => '频繁请求发布',
+        53502 => '群发ID无效',
+        53600 => '文章无效',
         60001 => '部门名称不能为空且长度不能超过32个字',
         60003 => '部门ID不存在',
         61451 => '参数错误 ',
@@ -247,7 +378,7 @@ trait WeChatTrait{
         87009 => '无效的签名',
         88000 => '无评论特权',
         9001001 => 'POST 数据参数不合法',
-        9001002 => '微信服务不可用',
+        9001002 => '微信服务器不可用',
         9001003 => 'Ticket 不合法',
         9001004 => '获取摇周边用户信息失败',
         9001005 => '获取商户信息失败',
@@ -274,5 +405,8 @@ trait WeChatTrait{
         9001035 => '设备申请参数不合法',
         9001036 => '查询起始值 begin 不合法',
     ];
+
     protected $_retry = false; //access_token 失效的重试请求
+    protected $_receive = [];
+    protected $_postxml;
 }

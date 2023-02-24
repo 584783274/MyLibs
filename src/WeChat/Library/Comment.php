@@ -1,6 +1,12 @@
 <?php
 
-trait TraitMaterialComment{
+namespace Kang\Libs\WeChat\Library;
+/**
+ * 文章评论管理
+ * Trait Comment
+ * @package Kang\Libs\WeChat\Library
+ */
+trait Comment{
     //------------------------------素材评论--------------------------------//
     /**
      * @var 打开已群发文章评论
@@ -8,10 +14,10 @@ trait TraitMaterialComment{
      * @param null $index 多图文时，用来指定第几篇图文，从0开始，不带默认返回该msg_data_id的第一篇图文
      * @return bool
      */
-    public function commentByOpen($msg_data_id, $index = null){
+    public function commentOpen($msg_data_id, $index = null){
         $data['msg_data_id'] = $msg_data_id;
         !$index OR $data['index'] = $index;
-        if(!$this->httpPost(self::API_COMMENT_OPEN, $data, true)){
+        if(!$this->httpPost(Urls::COMMENT_OPEN, $data, true)){
             return false;
         }
 
@@ -23,11 +29,10 @@ trait TraitMaterialComment{
      * @param null $index 多图文时，用来指定第几篇图文，从0开始，不带默认返回该msg_data_id的第一篇图文
      * @return bool
      */
-    public function commentByClose($msg_data_id, $index = null){
+    public function commentClose($msg_data_id, $index = null){
         $data['msg_data_id'] = $msg_data_id;
         !$index OR $data['index'] = $index;
-
-        if(!$this->httpPost(self::API_COMMENT_CLOSE, $data, true)){
+        if(!$this->httpPost(Urls::COMMENT_CLOSE, $data, true)){
             return false;
         }
 
@@ -54,13 +59,14 @@ trait TraitMaterialComment{
     }]
     }
      */
-    public function commentBySelect($msg_data_id, $begin = 0, $type = self::TYPE_ALL, $index = 0, $count = 49){
+    public function commentSelect($msg_data_id, $begin = 0, $type = self::TYPE_ALL, $index = 0, $count = 49){
         $data['msg_data_id'] = $msg_data_id;
         $data['index'] = $index;
         $data['begin'] = $begin;
         $data['type'] = $type;
+        $data['count'] = $count > 50 ? 49 : $count;
 
-        return $this->httpPost(self::API_COMMENT_LIST, $data, true);
+        return $this->httpPost(Urls::COMMENT_LIST, $data, true);
     }
     /**
      * @var 评价加精
@@ -69,11 +75,11 @@ trait TraitMaterialComment{
      * @param int $index 多图文时，用来指定第几篇图文，从0开始，不带默认返回该msg_data_id的第一篇图文
      * @return bool
      */
-    public function commentFeaturedBySet($msg_data_id, $user_comment_id, $index = 0){
+    public function commentSetFeatured($msg_data_id, $user_comment_id, $index = 0){
         $data['msg_data_id'] = $msg_data_id;
         $data['index'] = $index;
         $data['user_comment_id'] = $user_comment_id;
-        if(!$this->httpPost(self::API_COMMENT_MARKELECT, $data, true)){
+        if(!$this->httpPost(Urls::COMMENT_SET_FEATURED, $data, true)){
             return false;
         }
 
@@ -86,11 +92,11 @@ trait TraitMaterialComment{
      * @param int $index 多图文时，用来指定第几篇图文，从0开始，不带默认返回该msg_data_id的第一篇图文
      * @return bool|void
      */
-    public function commentFeaturedByUnSet($msg_data_id, $user_comment_id, $index = 0){
+    public function commentUnSetFeatured($msg_data_id, $user_comment_id, $index = 0){
         $data['msg_data_id'] = $msg_data_id;
         $data['index'] = $index;
         $data['user_comment_id'] = $user_comment_id;
-        if(!$this->httpPost(self::API_COMMENT_UN_MARKELECT, $data, true)){
+        if(!$this->httpPost(Urls::COMMENT_UN_SET_FEATURED, $data, true)){
             return false;
         }
 
@@ -103,11 +109,11 @@ trait TraitMaterialComment{
      * @param int $index 多图文时，用来指定第几篇图文，从0开始，不带默认返回该msg_data_id的第一篇图文
      * @return bool|void
      */
-    public function commentByDel($msg_data_id, $user_comment_id, $index = 0){
+    public function commentDel($msg_data_id, $user_comment_id, $index = 0){
         $data['msg_data_id'] = $msg_data_id;
         $data['index'] = $index;
         $data['user_comment_id'] = $user_comment_id;
-        if(!$this->httpPost(self::API_COMMENT_DELETE, $data, true)){
+        if(!$this->httpPost(Urls::COMMENT_DEL, $data, true)){
             return false;
         }
 
@@ -120,12 +126,12 @@ trait TraitMaterialComment{
      * @param $user_comment_id 评论id
      * @param int $index 多图文时，用来指定第几篇图文，从0开始，不带默认返回该msg_data_id的第一篇图文
      */
-    public function commentReplyByCreate($content, $msg_data_id, $user_comment_id, $index = 0){
+    public function commentReply($content, $msg_data_id, $user_comment_id, $index = 0){
         $data['content'] = $content;
         $data['msg_data_id'] = $msg_data_id;
         $data['index'] = $index;
         $data['user_comment_id'] = $user_comment_id;
-        return $this->httpPost(self::API_COMMENT_REPLY, $data, true);
+        return $this->httpPost(Urls::COMMENT_REPLY, $data, true);
     }
     /**
      * @var 删除回复评论
@@ -133,11 +139,11 @@ trait TraitMaterialComment{
      * @param $user_comment_id 评论id
      * @param int $index 多图文时，用来指定第几篇图文，从0开始，不带默认返回该msg_data_id的第一篇图文
      */
-    public function commentReplyByDel($msg_data_id, $user_comment_id, $index = 0){
+    public function commentReplyDel($msg_data_id, $user_comment_id, $index = 0){
         $data['msg_data_id'] = $msg_data_id;
         $data['index'] = $index;
         $data['user_comment_id'] = $user_comment_id;
-        if(!$this->httpPost(self::API_COMMENT_DEL_REPLY, $data, true)){
+        if(!$this->httpPost(Urls::COMMENT_REPLY_DEL, $data, true)){
             return false;
         }
 

@@ -215,7 +215,7 @@ class Component{
             return $this->{$attr}($value);
         }
 
-        return $this;
+        $this->_config[$name] = $value;
     }
     /**
      * @param $name

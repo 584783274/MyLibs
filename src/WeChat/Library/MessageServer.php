@@ -1,16 +1,15 @@
 <?php
 
 namespace Kang\Libs\WeChat\Library;
+
 use Kang\Libs\Base\Event;
-use Kang\Libs\WeChat\Prpcrypt;
-use Kang\Libs\WeChat\WeChat;
 
 /**
- * @var 服务器消息处理
+ * 服务器消息处理
  * Trait TraitServerMessage
  * @package Kang\Libs\WeChat\Library
  */
-trait TraitServerMessage{
+trait MessageServer{
     //--------------------------微信服务器通知--------------------------------//
     /**
      * @var 微信服务器的验证
@@ -24,7 +23,7 @@ trait TraitServerMessage{
             $this->encrypt_type = isset($_GET["encrypt_type"]) ? $_GET["encrypt_type"] : '';
             if ($this->encrypt_type == 'aes') { //aes加密
                 $event = new Event();
-                $event->data['validate'] = $postStr;
+                $event->data = $postStr;
                 $this->trigger(self::EVENT_lOG, $event);
                 $encryptStr = $array['Encrypt'];
                 $pc = new Prpcrypt($this->encodingAesKey);
@@ -36,11 +35,12 @@ trait TraitServerMessage{
                         return false;
                     }
                 }
-                $this->postxml = $array[1];
+
+                $this->_postxml = $array[1];
                 if (!$this->appid)
                     $this->appid = $array[2]; //为了没有appid的订阅号。
             } else {
-                $this->postxml = $postStr;
+                $this->_postxml = $postStr;
             }
         } elseif (isset($_GET["echostr"])) {
             $echoStr = $_GET["echostr"];
@@ -63,6 +63,7 @@ trait TraitServerMessage{
             else
                 die('no access');
         }
+
         return true;
     }
 
@@ -72,7 +73,7 @@ trait TraitServerMessage{
      */
     public function getRevive() {
         if(empty($this->_receive)){
-            $postStr = !empty($this->postxml) ? $this->postxml : file_get_contents("php://input");
+            $postStr = !empty($this->_postxml) ? $this->_postxml : file_get_contents("php://input");
             if (!empty($postStr)) {
                 $this->_receive = (array) simplexml_load_string($postStr, 'SimpleXMLElement', LIBXML_NOCDATA);
             }
@@ -739,5 +740,218 @@ trait TraitServerMessage{
             return $this->_msg;
         }
     }
-    //--------------------------微信服务器通知--------------------------------//
+
+    /**
+     * XML编码
+     * @param mixed $data 数据
+     * @param string $root 根节点名
+     * @param string $item 数字索引的子节点名
+     * @param string $attr 根节点属性
+     * @param string $id   数字索引子节点key转换的属性名
+     * @param string $encoding 数据编码
+     * @return string
+     */
+    public function xml_encode($data, $root = 'xml', $item = 'item', $attr = '', $id = 'id', $encoding = 'utf-8') {
+        if (is_array($attr)) {
+            $_attr = array();
+            foreach ($attr as $key => $value) {
+                $_attr[] = "{$key}=\"{$value}\"";
+            }
+            $attr = implode(' ', $_attr);
+        }
+
+        $attr = trim($attr);
+        $attr = empty($attr) ? '' : " {$attr}";
+        $xml = "<{$root}{$attr}>";
+        $xml .= $this->data_to_xml($data, $item, $id);
+        $xml .= "</{$root}>";
+
+        return $xml;
+    }
+    /**
+     * 数据XML编码
+     * @param mixed $data 数据
+     * @return string
+     */
+    public static function data_to_xml($data) {
+        $xml = '';
+        foreach ($data as $key => $val) {
+            is_numeric($key) && $key = "item id=\"$key\"";
+            $xml .= "<$key>";
+            $xml .= ( is_array($val) || is_object($val)) ? self::data_to_xml($val) : self::xmlSafeStr($val);
+            list($key, ) = explode(' ', $key);
+            $xml .= "</$key>";
+        }
+
+        return $xml;
+    }
+
+    /**
+     * @param $str
+     * @return string
+     */
+    public static function xmlSafeStr($str) {
+        return '<![CDATA[' . preg_replace("/[\\x00-\\x08\\x0b-\\x0c\\x0e-\\x1f]/", '', $str) . ']]>';
+    }
+    /**
+     * xml格式加密，仅请求为加密方式时再用
+     */
+    private function generate($encrypt, $signature, $timestamp, $nonce) {
+        //格式化加密信息
+        $format = "<xml>
+<Encrypt><![CDATA[%s]]></Encrypt>
+<MsgSignature><![CDATA[%s]]></MsgSignature>
+<TimeStamp>%s</TimeStamp>
+<Nonce><![CDATA[%s]]></Nonce>
+</xml>";
+        return sprintf($format, $encrypt, $signature, $timestamp, $nonce);
+    }
+    /**
+     * 过滤文字回复\r\n换行符
+     * @param string $text
+     * @return string|mixed
+     */
+    private function _auto_text_filter($text) {
+        if (!$this->_text_filter)
+            return $text;
+        return str_replace("\r\n", "\n", $text);
+    }
+
+    /**
+     * For weixin server validation
+     */
+    private function checkSignature($str = '') {
+        $signature = isset($_GET["signature"]) ? $_GET["signature"] : '';
+        $signature = isset($_GET["msg_signature"]) ? $_GET["msg_signature"] : $signature; //如果存在加密验证则用加密验证段
+        $timestamp = isset($_GET["timestamp"]) ? $_GET["timestamp"] : '';
+        $nonce = isset($_GET["nonce"]) ? $_GET["nonce"] : '';
+
+        $token = $this->token;
+        $tmpArr = [$token, $timestamp, $nonce, $str];
+        sort($tmpArr, SORT_STRING);
+        $tmpStr = implode($tmpArr);
+        $tmpStr = sha1($tmpStr);
+        if ($tmpStr == $signature) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+}
+
+
+/**
+ * Prpcrypt class
+ *
+ * 提供接收和推送给公众平台消息的加解密接口.
+ */
+class Prpcrypt {
+
+    public $key;
+
+    function __construct($k) {
+        $this->key = base64_decode($k . "=");
+    }
+
+    /**
+     * 兼容老版本php构造函数，不能在 __construct() 方法前边，否则报错
+     */
+    function Prpcrypt($k) {
+        $this->key = base64_decode($k . "=");
+    }
+
+    /**
+     * 对明文进行加密
+     * @param string $text 需要加密的明文
+     * @return string 加密后的密文
+     */
+    public function encrypt($text, $appid) {
+        try {
+            //获得16位随机字符串，填充到明文之前
+            $random = $this->getRandomStr(); //"aaaabbbbccccdddd";
+            $text = $random . pack("N", strlen($text)) . $text . $appid;
+            // 网络字节序
+            $size = mcrypt_get_block_size(MCRYPT_RIJNDAEL_128, MCRYPT_MODE_CBC);
+            $module = mcrypt_module_open(MCRYPT_RIJNDAEL_128, '', MCRYPT_MODE_CBC, '');
+            $iv = substr($this->key, 0, 16);
+            //使用自定义的填充方式对明文进行补位填充
+            $pkc_encoder = new PKCS7Encoder;
+            $text = $pkc_encoder->encode($text);
+            mcrypt_generic_init($module, $this->key, $iv);
+            //加密
+            $encrypted = mcrypt_generic($module, $text);
+            mcrypt_generic_deinit($module);
+            mcrypt_module_close($module);
+
+            //			print(base64_encode($encrypted));
+            //使用BASE64对加密后的字符串进行编码
+            return array(ErrorCode::$OK, base64_encode($encrypted));
+        } catch (Exception $e) {
+            //print $e;
+            return array(ErrorCode::$EncryptAESError, null);
+        }
+    }
+
+    /**
+     * 对密文进行解密
+     * @param string $encrypted 需要解密的密文
+     * @return string 解密得到的明文
+     */
+    public function decrypt($encrypted, $appid) {
+
+        try {
+            //使用BASE64对需要解密的字符串进行解码
+            $ciphertext_dec = base64_decode($encrypted);
+            $module = mcrypt_module_open(MCRYPT_RIJNDAEL_128, '', MCRYPT_MODE_CBC, '');
+            $iv = substr($this->key, 0, 16);
+            mcrypt_generic_init($module, $this->key, $iv);
+            //解密
+            $decrypted = mdecrypt_generic($module, $ciphertext_dec);
+            mcrypt_generic_deinit($module);
+            mcrypt_module_close($module);
+        } catch (Exception $e) {
+            return array(ErrorCode::$DecryptAESError, null);
+        }
+
+
+        try {
+            //去除补位字符
+            $pkc_encoder = new PKCS7Encoder;
+            $result = $pkc_encoder->decode($decrypted);
+            //去除16位随机字符串,网络字节序和AppId
+            if (strlen($result) < 16)
+                return "";
+            $content = substr($result, 16, strlen($result));
+            $len_list = unpack("N", substr($content, 0, 4));
+            $xml_len = $len_list[1];
+            $xml_content = substr($content, 4, $xml_len);
+            $from_appid = substr($content, $xml_len + 4);
+            if (!$appid)
+                $appid = $from_appid;
+            //如果传入的appid是空的，则认为是订阅号，使用数据中提取出来的appid
+        } catch (Exception $e) {
+            //print $e;
+            return array(ErrorCode::$IllegalBuffer, null);
+        }
+        if ($from_appid != $appid)
+            return array(ErrorCode::$ValidateAppidError, null);
+        //不注释上边两行，避免传入appid是错误的情况
+        return array(0, $xml_content, $from_appid); //增加appid，为了解决后面加密回复消息的时候没有appid的订阅号会无法回复
+    }
+
+    /**
+     * 随机生成16位字符串
+     * @return string 生成的字符串
+     */
+    function getRandomStr() {
+
+        $str = "";
+        $str_pol = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyz";
+        $max = strlen($str_pol) - 1;
+        for ($i = 0; $i < 16; $i++) {
+            $str .= $str_pol[mt_rand(0, $max)];
+        }
+        return $str;
+    }
+
 }

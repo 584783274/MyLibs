@@ -119,7 +119,11 @@ class Curl{
      * @param array $header ['Content-Type' => 'application/x-www-form-urlencoded']
      * @return Curl
      */
-    public function setHeader($header = []){
+    public function setHeader($header = [], $isAppend = false){
+        if($isAppend === false){
+            $this->_headers = [];
+        }
+
         foreach ($header as $k => $v) {
             $this->_headers[] = is_string($k) ? sprintf('%s:%s', $k, $v) : $v;
         }
@@ -189,9 +193,9 @@ class Curl{
      * @var 获取创建对象
      * @return resource
      */
-    private function create($url, $method, $data){
+    private function create($url, $method, $data, $isCommon = true){
         $curl = curl_init();
-        $this->setCommonSetopt();
+        $this->setCommonSetopt([], $isCommon);
         $this->setUrlSetopt($url, $method, $data);
         if(!empty($this->_headers)){
             $this->setSetoptVaule(CURLOPT_HTTPHEADER, $this->_headers);

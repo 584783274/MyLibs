@@ -14,7 +14,6 @@ use Kang\Libs\Helper\Curl;
  * @package Kang\Libs\WeChat
  */
 class WeChatEnterprise extends Component{
-    use WeChatTrait;
 
     const EVENT_AFTER_REFRESH_ACCESS_TOKEN = 'afterRefreshAccessToken';
     const EVENT_BEFORE_REFRESH_ACCESS_TOKEN = 'beforeRefreshAccessToken';

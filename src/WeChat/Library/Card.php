@@ -2,7 +2,6 @@
 namespace Kang\Libs\WeChat\Library;
 
 trait Card{
-    //------------------------------卡卷管理--------------------------------//
     /**
      * @param array $data
      * @return bool|string
