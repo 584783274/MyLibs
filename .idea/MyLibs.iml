@@ -5,8 +5,8 @@
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" packagePrefix="Kang\libs\" />
       <excludeFolder url="file://$MODULE_DIR$/vendor/composer" />
     </content>
-    <content url="file://$MODULE_DIR$/../YiiApi" />
     <content url="file://$MODULE_DIR$/bce-php-sdk-0.9.17" />
+    <content url="file://$MODULE_DIR$/../work" />
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
