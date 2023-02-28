@@ -53,8 +53,4 @@ class Platform extends WeChatTrait{
     const AUTHOR_INFO_TYPE_UPDATEAUTHORIZED = 'updateauthorized'; //授权更新通知
 
 
-    private $_config = [];
-    private $_receive = [];
-    private $_branchId;
-    private $_weObj = null;
 }

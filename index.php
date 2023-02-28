@@ -2,9 +2,16 @@
 require_once './vendor/autoload.php';
 
 
-$wechat = new \Kang\Libs\WeChat\WeChat(['appid' => 'wx053536f0d2fab54f', 'appsecret' => 'b53d66485fe031b8eba114dbf7203eb6']);
+$wechat = new \Kang\Libs\WeChat\WeChat([
+    'appid' => 'wx6a0d4dddac14cdfc',
+    'appsecret' => 'ea0840a45b69c358a9e775525c95273d',
+    'token' => 'token',
+    'EncodingAESKey' => '1jBc2gaRDKnDO8S50soKzKihgAdqpINmvmUrbbxYDr8'
+]);
 
-$wechat->getAccessToken();
+
+$wechat->validate();
+
 ////
 //$baidu = new \Kang\Libs\Baidu\Baidu([
 //    'appid' => '28937645',

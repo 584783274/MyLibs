@@ -21,6 +21,7 @@ trait MessageServer{
         $encryptStr = "";
         if ($_SERVER['REQUEST_METHOD'] == "POST") {
             $postStr = file_get_contents("php://input");
+            file_put_contents('./a.txt', $postStr);
             $array = (array) simplexml_load_string($postStr, 'SimpleXMLElement', LIBXML_NOCDATA);
             $this->encrypt_type = isset($_GET["encrypt_type"]) ? $_GET["encrypt_type"] : '';
             if ($this->encrypt_type == 'aes') { //aes加密
